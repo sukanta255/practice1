@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TODO App</title>
+</head>
+<body>
+  <h1>TODO List</h1>
+
+  <form id="todoForm">
+    <input type="text" id="todoInput" placeholder="New Todo" required>
+    <button type="submit">Add</button>
+  </form>
+
+  <ul id="todoList"></ul>
+
+  <script>
+    const todoList = document.getElementById("todoList");
+    const todoForm = document.getElementById("todoForm");
+    const todoInput = document.getElementById("todoInput");
+
+    // Fetch todos from server
+    async function fetchTodos() {
+      const res = await fetch("/todos");
+      const todos = await res.json();
+      todoList.innerHTML = "";
+      todos.forEach(todo => {
+        const li = document.createElement("li");
+        li.textContent = todo.title + " ";
+
+        if (!todo.completed) {
+          const completeBtn = document.createElement("button");
+          completeBtn.textContent = "Complete";
+          completeBtn.onclick = async () => {
+            await fetch(`/todos/${todo._id}/complete`, { method: "PUT" });
+            fetchTodos();
+          };
+          li.appendChild(completeBtn);
+        } else {
+          li.textContent += "✅ ";
+        }
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.onclick = async () => {
+          await fetch(`/todos/${todo._id}`, { method: "DELETE" });
+          fetchTodos();
+        };
+        li.appendChild(deleteBtn);
+
+        todoList.appendChild(li);
+      });
+    }
+
+    // Add new todo
+    todoForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = todoInput.value;
+      await fetch("/todos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title })
+      });
+      todoInput.value = "";
+      fetchTodos();
+    });
+
+    fetchTodos(); // Initial fetch
+  </script>
+</body>
+</html>
